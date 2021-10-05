@@ -1,27 +1,37 @@
 # Make sure to change the action name here (must be unique).
 # Update the rest as needed.
-name: 'unique-action-goes-here'
-description: 'BRIEF DESCRIPTION OF YOUR ACTION'
+name: 'merge-branch-to-labeled-prs'
+description: 'Merges a branch to labeled prs and comments on them if they need to be addressed'
 branding: # Look at documentation for branding options/requirements. These are my favorites.
   icon: 'book-open'
   color: 'green'
 inputs:
-  input-one:  
-    description: 'Description of input-one'
+  label-to-check:  
+    description: 'Label to Check for on PRs'
+    required: true
+    default: 'MasterSync'
+  github-token:
+    description: 'GitHub Token'
+    required: true
+    default: 'GitHubToken'
+  message-for-pr:  
+    description: 'Message to Put on PRs if not able to merge'
     required: false
-    default: 'default value goes here'
-  input-two:
-    description: 'Description of input-two'
+    default: 'Hey Tried to Merge with Master, I am taking off the label. Please put the label back on when I should try again! And Have a Great Day!'
+  remove-label:
+    description: 'Remove Label if PR Fails. Default, removes it to prevent multiple runs after failure'
     required: false
-    default: 'default value goes here'
-outputs:
-  output-one:
-    description: 'Description of output-one'
-  output-two:
-    description: 'Description of output-two'	
+    default: true
+  gpg-key:
+    description: 'GPG Key'
+    required: false
+    default: ""
 runs:
   using: 'docker'
   image: 'Dockerfile'
   args:
-    - ${{ inputs.input-one }}
-    - ${{ inputs.input-two }}
+    - ${{ inputs.label-to-check }}
+    - ${{ inputs.github-token }}
+    - ${{ inputs.message-for-pr }}
+    - ${{ inputs.remove-label }}
+    - ${{ inputs.gpg-key }}
