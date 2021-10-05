@@ -9,6 +9,8 @@ DEFAULT_MESSAGE = "Hey, MasterSync Tried to Merge with Master, but encountered a
 POSSIBLE_TRUE = ['true', '1', 't', 'y', 'yes', 'si', 'yeah',
                  'yup', 'certainly', 'uh-huh', 'hell-yeah', 'why-not', 'sure']
 
+USER_ONLY = True
+
 
 def strToBoolean(s):
     global POSSIBLE_TRUE
@@ -72,8 +74,8 @@ def attemptToSyncBranch(repo, gh, pull, messageForPr, runningVerification):
         print("Successful Sync")
     else:
         print("Failed to Sync, Creating Comment on PR")
-        pull.create_issue_comment(messageForPr)
-        # Todo: Remove Label
+        # pull.create_issue_comment(messageForPr)
+        # Todo: Remove Label Option
 
 
 def getAllPRsBranchNamesThatHaveLabel(repo, gh, labelToCheck, messageForPr, runningVerification):
@@ -88,7 +90,10 @@ def getAllPRsBranchNamesThatHaveLabel(repo, gh, labelToCheck, messageForPr, runn
         return "Failed to find Repo"
 
     pulls = ourRepo.get_pulls(state='open', sort='created', base='master')
+    ourUserName = gh.get_user().login
     for pull in pulls:
+        if USER_ONLY and pull.user.login != ourUserName:
+            continue
         labels = pull.labels
         for label in labels:
             if (label.name == labelToCheck):
