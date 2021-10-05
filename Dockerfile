@@ -13,6 +13,7 @@ FROM cicirello/pyaction-lite:3
 # FROM ghcr.io/cicirello/pyaction:3
 
 COPY entrypoint.py /entrypoint.py
-COPY requirements.txt  /requirements.txt
-RUN pip install -r requirements.txt
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
 ENTRYPOINT ["/entrypoint.py"]
