@@ -1,6 +1,6 @@
 # Make sure to change the action name here (must be unique).
 # Update the rest as needed.
-name: 'merge-branch-to-labeled-prs'
+name: 'merge-branch-to-labled-prs-docker'
 description: 'Merges a branch to labeled prs and comments on them if they need to be addressed'
 branding: # Look at documentation for branding options/requirements. These are my favorites.
   icon: 'book-open'
@@ -26,27 +26,12 @@ inputs:
     description: 'GPG Key'
     required: false
     default: ""
-  gpg-key-passphrase:
-    description: 'GPG Key Passphrase'
-    required: false
-    default: ""
-#Todo: Make this a composite Action
 runs:
-  using: 'composite'
-  steps:
-    - uses: actions/checkout@v2
-    #Todo: Setup GPG Key On Windows Machine
-    # - name: Import GPG key
-    #   id: import_gpg
-    #   uses: crazy-max/ghaction-import-gpg@v4
-    #   with:
-    #     gpg_private_key: ${{ inputs.gpg-key }}
-    #     passphrase: ${{ inputs.gpg-key-passphrase }}
-    #     git_commit_gpgsign: true #This is to Sign our Commits from the Merge
-    - uses: ./.github/actions/merge-branch-to-labled-prs-docker
-      with: 
-        - ${{ inputs.label-to-check }}
-        - ${{ inputs.github-token }}
-        - ${{ inputs.message-for-pr }}
-        - ${{ inputs.remove-label }}
-        - ${{ inputs.gpg-key }}
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.label-to-check }}
+    - ${{ inputs.github-token }}
+    - ${{ inputs.message-for-pr }}
+    - ${{ inputs.remove-label }}
+    - ${{ inputs.gpg-key }}

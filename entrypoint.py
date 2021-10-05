@@ -5,7 +5,7 @@ import git
 import os
 from github import Github
 
-DEFAULT_MESSAGE = "Hey, I Tried to Merge with Master, but encountered a merge conflict. Can you please resolve it? I am taking off the label in the meanwhile. Please put the label back on when I should try again! And Have a Great Day!"
+DEFAULT_MESSAGE = "Hey, MasterSync Tried to Merge with Master, but encountered a merge conflict. Please resolve this And have a Great Day!"
 POSSIBLE_TRUE = ['true', '1', 't', 'y', 'yes', 'si', 'yeah',
                  'yup', 'certainly', 'uh-huh', 'hell-yeah', 'why-not', 'sure']
 
@@ -26,14 +26,33 @@ def getParameters():
     return (labelToCheck, githubToken, messageForPr, removeLabel, gpgKey)
 
 
-def safelyApplyUpdate(repo, destBranch, srcBranch="master"):
+def mergeConflict(repo):
+    # Check the status of the ".git" repository and move to a list.
+    status_git = repo.git.status(porcelain=True).split()
+
+    # Checks if "UU" which means conflict, is in the "status_git" list, if it
+    # has the function "conflicts" it returns True, otherwise False
+    if "UU" in status_git:
+        return True
+
+    return False
+
+
+def safelyApplyUpdate(repo, destBranch, srcBranch="master", runningVerification=False):
+    errorCode = 1
+    mergeCommand = srcBranch
     repo.git.checkout(destBranch)
-    repo.git.merge(srcBranch)
-    # Todo: Check for Merge Conflicts
-    repo.git.push()
+
+    print(mergeCommand)
+    repo.git.merge(mergeCommand)
+    # Todo: Create/Test for Merge Conflicts
+    if (not mergeConflict(repo)):
+        errorCode = 0
+        repo.git.push()
+
     repo.git.reset("--hard")
     repo.git.checkout(srcBranch)  # Always End on original Branch
-    return 0
+    return errorCode
 
 
 def checkoutAndPullBranchName(repo, branchName="master"):
@@ -43,18 +62,21 @@ def checkoutAndPullBranchName(repo, branchName="master"):
     repo.git.pull()
 
 
-def attemptToSyncBranch(repo, gh, pull):
+def attemptToSyncBranch(repo, gh, pull, messageForPr, runningVerification):
     prBranchName = pull.head.ref
     print("Attempting to merge into " + prBranchName)
-    result = safelyApplyUpdate(repo, prBranchName)
+    result = safelyApplyUpdate(
+        repo, prBranchName, runningVerification=runningVerification)
     if (result == 0):
         # Success
         print("Successful Sync")
     else:
-        print("Failed to Sync")
+        print("Failed to Sync, Creating Comment on PR")
+        pull.create_issue_comment(messageForPr)
+        # Todo: Remove Label
 
 
-def getAllPRsBranchNamesThatHaveLabel(repo, gh, labelToCheck):
+def getAllPRsBranchNamesThatHaveLabel(repo, gh, labelToCheck, messageForPr, runningVerification):
     repo_name = repo.remotes.origin.url.split('.git')[0].split('/')[-1]
     ourRepo = None
     for ghrepo in gh.get_user().get_repos():
@@ -70,16 +92,11 @@ def getAllPRsBranchNamesThatHaveLabel(repo, gh, labelToCheck):
         labels = pull.labels
         for label in labels:
             if (label.name == labelToCheck):
-                attemptToSyncBranch(repo, gh, pull)
-
-
-def getCurrentRepoInformation(repo):
-
-    print(repo.git.status())
+                attemptToSyncBranch(
+                    repo, gh, pull, messageForPr, runningVerification)
 
 
 if __name__ == "__main__":
-    # Rename these variables to something meaningful
     (labelToCheck, githubToken, messageForPr,
      removeLabel, gpgKey) = getParameters()
 
@@ -88,8 +105,8 @@ if __name__ == "__main__":
     repo = git.Repo(".")
     gh = Github(githubToken)
 
-    getCurrentRepoInformation(repo)
     # Make sure we have the latest changes locally
     checkoutAndPullBranchName(repo)
 
-    getAllPRsBranchNamesThatHaveLabel(repo, gh, labelToCheck)
+    getAllPRsBranchNamesThatHaveLabel(
+        repo, gh, labelToCheck, messageForPr, runningVerification)
