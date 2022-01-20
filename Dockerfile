@@ -1,5 +1,5 @@
 # If all you need is Python 3, use:
-FROM python:3.8
+FROM python:3.10.2
 
 # If you need Python 3 and the GitHub CLI, then use:
 # FROM cicirello/pyaction:4
